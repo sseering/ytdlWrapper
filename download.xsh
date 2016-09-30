@@ -21,6 +21,8 @@ def getCipher():
 	key = PBKDF2($YTD_KEY.encode('utf8'), salt=b'15AUt3q2X9CdEPAx', dkLen=32)
 	return AES.new(key, mode=AES.MODE_CTR, counter=ctr)
 
+git pull --no-rebase or true @(sys.exit(1))
+
 # read videolists from encrypted file
 list = []
 with open('listFile.json.crypt', 'rb') as listFileCryted:
@@ -46,6 +48,7 @@ if len(sys.argv) > 1:
 			f.write(getCipher().encrypt(json.dumps(list)))
 		print('added')
 		printList(list)
+		git add listFile.json.crypt and git commit -m --add and git push
 
 	if len(sys.argv) > 2 and sys.argv[1] == '--del':
 		i = -1
@@ -59,6 +62,7 @@ if len(sys.argv) > 1:
 			f.write(getCipher().encrypt(json.dumps(list)))
 		print('deleted')
 		printList(list)
+		git add listFile.json.crypt and git commit -m --del and git push
 
 	sys.exit()
 
