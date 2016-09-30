@@ -36,21 +36,21 @@ def printList(list):
 	for i, l in enumerate(list):
 		print(repr(i).rjust(3), l['url'], l['comment'])
 
-if len(sys.argv) > 0:
-	if sys.argv[0] == '--print':
+if len(sys.argv) > 1:
+	if sys.argv[1] == '--print':
 		printList(list)
 
-	if len(sys.argv) > 2 and sys.argv[0] == '--add':
-		list.append({'url': sys.argv[1], 'comment': sys.argv[2]})
+	if len(sys.argv) > 3 and sys.argv[1] == '--add':
+		list.append({'url': sys.argv[2], 'comment': sys.argv[3]})
 		with open('listFile.json.crypt', 'wb') as f:
 			f.write(getCipher().encrypt(json.dumps(list)))
 		print('added')
 		printList(list)
 
-	if len(sys.argv) > 1 and sys.argv[0] == '--del':
+	if len(sys.argv) > 2 and sys.argv[1] == '--del':
 		i = -1
 		try:
-			i = int(sys.argv[1])
+			i = int(sys.argv[2])
 		except:
 			sys.exit(1)
 
