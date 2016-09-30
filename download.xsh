@@ -21,6 +21,7 @@ def getCipher():
 	key = PBKDF2($YTD_KEY.encode('utf8'), salt=b'15AUt3q2X9CdEPAx', dkLen=32)
 	return AES.new(key, mode=AES.MODE_CTR, counter=ctr)
 
+# update data files
 git pull --no-rebase or true @(sys.exit(1))
 
 # read videolists from encrypted file
@@ -32,7 +33,7 @@ with open('listFile.json.crypt', 'rb') as listFileCryted:
 # decrypt dlArchive file of youtube-dl to temporary file
 with tempfile.NamedTemporaryFile(delete=False) as tmpDlArchive:
 	with open('dlArchive.txt.crypt', 'rb') as dlArchive:
-		tmpDlArchive.write(getCipher().decrypt(dlArchive.read()));
+		tmpDlArchive.write(getCipher().decrypt(dlArchive.read()))
 
 def printList(list):
 	for i, l in enumerate(list):
@@ -84,3 +85,5 @@ with open(tmpDlArchive.name, 'r') as srcFile:
 	with open('dlArchive.txt.crypt', 'wb') as dlArchive:
 		dlArchive.write(getCipher().encrypt(srcFile.read()))
 
+# publish data file
+git add dlArchive.txt.crypt and git commit -m 'download happend' and git push
