@@ -69,7 +69,7 @@ if len(sys.argv) > 1:
 
 # download newest entries of video lists
 for l in list:
-	youtube-dl --abort-on-error --embed-thumbnail --add-metadata -f bestvideo+bestaudio --download-archive @(tmpDlArchive.name) --dateafter 'today-20days' -- @(l['url']) or true @(sys.exit(1))
+	youtube-dl --add-metadata -f bestvideo+bestaudio --download-archive @(tmpDlArchive.name) --dateafter 'today-20days' -- @(l['url']) or true @(sys.exit(1))
 
 # download single videos
 for root, dirs, files in os.walk('urls'):
@@ -77,8 +77,7 @@ for root, dirs, files in os.walk('urls'):
 		f = os.path.join(root, file)
 		url = $(cat @(f)).strip()
 		print(f)
-		youtube-dl --abort-on-error --embed-thumbnail --add-metadata -f bestvideo+bestaudio --download-archive @(tmpDlArchive.name) -- @(url) or true @(sys.exit(1))
-		rm -v -- @(f)
+		youtube-dl --add-metadata -f bestvideo+bestaudio --download-archive @(tmpDlArchive.name) -- @(url) and rm -v -- @(f) or true @(sys.exit(1))
 
 # reencrypt dlArchive file of youtube-dl from temporary file
 with open(tmpDlArchive.name, 'r') as srcFile:
