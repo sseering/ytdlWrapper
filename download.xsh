@@ -21,19 +21,30 @@ def getCipher():
 	key = PBKDF2($YTD_KEY.encode('utf8'), salt=b'15AUt3q2X9CdEPAx', dkLen=32)
 	return AES.new(key, mode=AES.MODE_CTR, counter=ctr)
 
+# decrypt dlArchive file of youtube-dl to temporary file and return its filename
+def decryptArchive():
+	with tempfile.NamedTemporaryFile(delete=False) as tmpDlArchive:
+		with open('dlArchive.txt.crypt', 'rb') as dlArchive:
+			tmpDlArchive.write(getCipher().decrypt(dlArchive.read()))
+	return tmpDlArchive.name
+
+# encrypt dlArchive file of youtube-dl and overwrite previously existing crypted file, using the given file name as source
+def encryptArchive(srcFileName):
+	with open(srcFileName, 'r') as srcFile:
+		with open('dlArchive.txt.crypt', 'wb') as dlArchive:
+			dlArchive.write(getCipher().encrypt(srcFile.read()))
+
 # update data files
 git pull --no-rebase or true @(sys.exit(1))
+
+# dlArchive file of youtube-dl
+archiveFile = decryptArchive()
 
 # read videolists from encrypted file
 list = []
 with open('listFile.json.crypt', 'rb') as listFileCryted:
 	listFile = getCipher().decrypt(listFileCryted.read())
 	list = json.loads(listFile.decode('utf8'))
-
-# decrypt dlArchive file of youtube-dl to temporary file
-with tempfile.NamedTemporaryFile(delete=False) as tmpDlArchive:
-	with open('dlArchive.txt.crypt', 'rb') as dlArchive:
-		tmpDlArchive.write(getCipher().decrypt(dlArchive.read()))
 
 def printList(list):
 	for i, l in enumerate(list):
@@ -42,6 +53,7 @@ def printList(list):
 if len(sys.argv) > 1:
 	if sys.argv[1] == '--print':
 		printList(list)
+		print('dlArchive:', archiveFile)
 
 	if len(sys.argv) > 3 and sys.argv[1] == '--add':
 		list.append({'url': sys.argv[2], 'comment': sys.argv[3]})
@@ -65,11 +77,15 @@ if len(sys.argv) > 1:
 		printList(list)
 		git add listFile.json.crypt and git commit -m --del and git push
 
+	if len(sys.argv) > 2 and sys.argv[1] == '--readArchive':
+		print('using folling file as new dlArchive:' , sys.argv[2])
+		encryptArchive(sys.argv[2])
+
 	sys.exit()
 
 # download newest entries of video lists
 for l in list:
-	youtube-dl --add-metadata -f bestvideo+bestaudio --download-archive @(tmpDlArchive.name) --dateafter 'today-20days' -- @(l['url']) or true @(sys.exit(1))
+	youtube-dl --add-metadata -f bestvideo+bestaudio --download-archive @(archiveFile) --dateafter 'today-20days' -- @(l['url']) or true @(sys.exit(1))
 
 # download single videos
 for root, dirs, files in os.walk('urls'):
@@ -77,12 +93,10 @@ for root, dirs, files in os.walk('urls'):
 		f = os.path.join(root, file)
 		url = $(cat @(f)).strip()
 		print(f)
-		youtube-dl --add-metadata -f bestvideo+bestaudio --download-archive @(tmpDlArchive.name) -- @(url) and rm -v -- @(f) or true @(sys.exit(1))
+		youtube-dl --add-metadata -f bestvideo+bestaudio --download-archive @(archiveFile) -- @(url) and rm -v -- @(f) or true @(sys.exit(1))
 
 # reencrypt dlArchive file of youtube-dl from temporary file
-with open(tmpDlArchive.name, 'r') as srcFile:
-	with open('dlArchive.txt.crypt', 'wb') as dlArchive:
-		dlArchive.write(getCipher().encrypt(srcFile.read()))
+encryptArchive(archiveFile)
 
 # publish data file
 git add dlArchive.txt.crypt and git commit -m 'download happend' and git push
