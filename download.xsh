@@ -86,17 +86,20 @@ if len(sys.argv) > 1:
 # download newest entries of video lists
 for l in list:
 	youtube-dl --add-metadata -f bestvideo+bestaudio --download-archive @(archiveFile) --dateafter 'today-20days' -- @(l['url']) or true @(sys.exit(1))
+	encryptArchive(archiveFile)
+	git add dlArchive.txt.crypt and git commit -m 'download happend'
 
 # download single videos
 for root, dirs, files in os.walk('urls'):
 	for file in files:
 		f = os.path.join(root, file)
-		url = $(cat @(f)).strip()
-		print(f)
-		youtube-dl --add-metadata -f bestvideo+bestaudio --download-archive @(archiveFile) -- @(url) and rm -v -- @(f) or true @(sys.exit(1))
-
-# reencrypt dlArchive file of youtube-dl from temporary file
-encryptArchive(archiveFile)
+		urls = $(cat @(f)).strip()
+		print('url-file:', f)
+		for url in urls.splitlines():
+			print('url from file:', f)
+			youtube-dl --add-metadata -f bestvideo+bestaudio --download-archive @(archiveFile) -- @(url) and rm -v -- @(f) or true @(sys.exit(1))
+			encryptArchive(archiveFile)
+			git add dlArchive.txt.crypt and git commit -m 'download happend'
 
 # publish data file
-git add dlArchive.txt.crypt and git commit -m 'download happend' and git push
+git push
