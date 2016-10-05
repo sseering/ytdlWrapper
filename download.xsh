@@ -96,7 +96,7 @@ for root, dirs, files in os.walk('urls'):
 		urls = $(cat @(f)).strip()
 		print('url-file:', f)
 		for url in urls.splitlines():
-			print('url from file:', f)
+			print('url from file:', url)
 			youtube-dl --add-metadata -f bestvideo+bestaudio --download-archive @(archiveFile) -- @(url) and rm -v -- @(f) or true @(sys.exit(1))
 			encryptArchive(archiveFile)
 			git add dlArchive.txt.crypt and git commit -m 'download happend'
