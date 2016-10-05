@@ -97,9 +97,10 @@ for root, dirs, files in os.walk('urls'):
 		print('url-file:', f)
 		for url in urls.splitlines():
 			print('url from file:', url)
-			youtube-dl --add-metadata -f bestvideo+bestaudio --download-archive @(archiveFile) -- @(url) and rm -v -- @(f) or true @(sys.exit(1))
+			youtube-dl --add-metadata -f bestvideo+bestaudio --download-archive @(archiveFile) -- @(url) or true @(sys.exit(1))
 			encryptArchive(archiveFile)
 			git add dlArchive.txt.crypt and git commit -m 'download happend'
+		rm -v -- @(f)
 
 # publish data file
 git push
