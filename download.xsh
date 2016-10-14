@@ -15,6 +15,11 @@ if not 'YTD_KEY' in ${...}:
 	print('please set YTD_KEY according to the server')
 	sys.exit(1)
 
+# read optional download speed rate limiting
+ratelimit = []
+if 'YTD_RATE' in ${...}:
+	ratelimit = ['-r', $YTD_RATE]
+
 # wrapper around a symmetric cipher
 def getCipher():
 	ctr = Counter.new(128)
@@ -85,7 +90,7 @@ if len(sys.argv) > 1:
 
 # download newest entries of video lists
 for l in list:
-	youtube-dl --add-metadata -f bestvideo+bestaudio --download-archive @(archiveFile) --dateafter 'today-20days' -- @(l['url']) or true @(sys.exit(1))
+	youtube-dl @(ratelimit) --add-metadata -f bestvideo+bestaudio --download-archive @(archiveFile) --dateafter 'today-20days' -- @(l['url']) or true @(sys.exit(1))
 	encryptArchive(archiveFile)
 	git add dlArchive.txt.crypt and git commit -m 'download happend'
 
@@ -97,7 +102,7 @@ for root, dirs, files in os.walk('urls'):
 		print('url-file:', f)
 		for url in urls.splitlines():
 			print('url from file:', url)
-			youtube-dl --add-metadata -f bestvideo+bestaudio --download-archive @(archiveFile) -- @(url) or true @(sys.exit(1))
+			youtube-dl @(ratelimit) --add-metadata -f bestvideo+bestaudio --download-archive @(archiveFile) -- @(url) or true @(sys.exit(1))
 			encryptArchive(archiveFile)
 			git add dlArchive.txt.crypt and git commit -m 'download happend'
 		rm -v -- @(f)
