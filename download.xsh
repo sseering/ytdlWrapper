@@ -83,7 +83,7 @@ if len(sys.argv) > 1:
 		git add listFile.json.crypt and git commit -m --del and git push
 
 	if len(sys.argv) > 2 and sys.argv[1] == '--readArchive':
-		print('using folling file as new dlArchive:' , sys.argv[2])
+		print('using following file as new dlArchive:' , sys.argv[2])
 		encryptArchive(sys.argv[2])
 
 	sys.exit()
