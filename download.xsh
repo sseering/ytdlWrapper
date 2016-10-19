@@ -12,7 +12,7 @@ from Crypto.Hash import SHA256
 
 # check if symmetric cipher key is set in env
 if not 'YTD_KEY' in ${...}:
-	print('please set YTD_KEY according to the server')
+	print('please set YTD_KEY according to the server:')
 	sys.exit(1)
 
 # read optional download speed rate limiting
