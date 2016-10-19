@@ -53,22 +53,31 @@ with open('listFile.json.crypt', 'rb') as listFileCryted:
 
 def printList(list):
 	for i, l in enumerate(list):
-		print(repr(i).rjust(3), l['url'], l['comment'])
+		print(repr(i).rjust(3), l['skip'], l['url'], l['comment'])
 
 if len(sys.argv) > 1:
-	if sys.argv[1] == '--print':
+	argv1 = sys.argv[1]
+	if argv1 == '--help' or argv1 == '-h' or argv1 == '-?' or argv1 == '-help':
+		print('--help|-h|-?|-help')
+		print('--print')
+		print('--add URL Comment')
+		print('--del No')
+		print('--skip No')
+		print('--readArchive File')
+
+	if argv1 == '--print':
 		printList(list)
 		print('dlArchive:', archiveFile)
 
-	if len(sys.argv) > 3 and sys.argv[1] == '--add':
-		list.append({'url': sys.argv[2], 'comment': sys.argv[3]})
+	if len(sys.argv) > 3 and argv1 == '--add':
+		list.append({'url': sys.argv[2], 'comment': sys.argv[3], 'skip': False})
 		with open('listFile.json.crypt', 'wb') as f:
 			f.write(getCipher().encrypt(json.dumps(list)))
 		print('added')
 		printList(list)
 		git add listFile.json.crypt and git commit -m --add and git push
 
-	if len(sys.argv) > 2 and sys.argv[1] == '--del':
+	if len(sys.argv) > 2 and argv1 == '--del':
 		i = -1
 		try:
 			i = int(sys.argv[2])
@@ -82,7 +91,7 @@ if len(sys.argv) > 1:
 		printList(list)
 		git add listFile.json.crypt and git commit -m --del and git push
 
-	if len(sys.argv) > 2 and sys.argv[1] == '--readArchive':
+	if len(sys.argv) > 2 and argv1 == '--readArchive':
 		print('using following file as new dlArchive:' , sys.argv[2])
 		encryptArchive(sys.argv[2])
 
@@ -90,6 +99,8 @@ if len(sys.argv) > 1:
 
 # download newest entries of video lists
 for l in list:
+	if l['skip']:
+		continue
 	youtube-dl @(ratelimit) --add-metadata -f bestvideo+bestaudio --download-archive @(archiveFile) --dateafter 'today-20days' -- @(l['url']) or true @(sys.exit(1))
 	encryptArchive(archiveFile)
 	git add dlArchive.txt.crypt and git commit -m 'download happend'
