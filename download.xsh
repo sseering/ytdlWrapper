@@ -46,10 +46,19 @@ git pull --no-rebase or true @(sys.exit(1))
 archiveFile = decryptArchive()
 
 # read videolists from encrypted file
-list = []
-with open('listFile.json.crypt', 'rb') as listFileCryted:
-	listFile = getCipher().decrypt(listFileCryted.read())
-	list = json.loads(listFile.decode('utf8'))
+def readVideoLists():
+	with open('listFile.json.crypt', 'rb') as listFileCryted:
+		return json.loads(getCipher().decrypt(listFileCryted.read()).decode('utf8'))
+
+list = readVideoLists()
+
+# write videolists to encrypted file
+def writeVideoLists(toWrite, printedMsg, commitMsg):
+	with open('listFile.json.crypt', 'wb') as f:
+		f.write(getCipher().encrypt(json.dumps(toWrite)))
+	print(printedMsg)
+	printList(toWrite)
+	git add listFile.json.crypt and git commit -m @(commitMsg) and git push
 
 def printList(list):
 	for i, l in enumerate(list):
@@ -71,11 +80,17 @@ if len(sys.argv) > 1:
 
 	if len(sys.argv) > 3 and argv1 == '--add':
 		list.append({'url': sys.argv[2], 'comment': sys.argv[3], 'skip': False})
-		with open('listFile.json.crypt', 'wb') as f:
-			f.write(getCipher().encrypt(json.dumps(list)))
-		print('added')
-		printList(list)
-		git add listFile.json.crypt and git commit -m --add and git push
+		writeVideoLists(list, 'added', '--add')
+
+	if len(sys.argv) > 2 and argv1 == '--skip':
+		i = -1
+		try:
+			i = int(sys.argv[2])
+		except:
+			sys.exit(1)
+
+		list[i]['skip'] = not list[i]['skip']
+		writeVideoLists(list, 'skip adjusted', '--skip')
 
 	if len(sys.argv) > 2 and argv1 == '--del':
 		i = -1
@@ -85,11 +100,7 @@ if len(sys.argv) > 1:
 			sys.exit(1)
 
 		list.pop(i)
-		with open('listFile.json.crypt', 'wb') as f:
-			f.write(getCipher().encrypt(json.dumps(list)))
-		print('deleted')
-		printList(list)
-		git add listFile.json.crypt and git commit -m --del and git push
+		writeVideoLists(list, 'deleted', '--del')
 
 	if len(sys.argv) > 2 and argv1 == '--readArchive':
 		print('using following file as new dlArchive:' , sys.argv[2])
