@@ -67,6 +67,7 @@ def printList(list):
 if len(sys.argv) > 1:
 	argv1 = sys.argv[1]
 	if argv1 == '--help' or argv1 == '-h' or argv1 == '-?' or argv1 == '-help':
+		print('env: YTD_KEY [YTD_RATE]')
 		print('--help|-h|-?|-help')
 		print('--print')
 		print('--add URL Comment')
