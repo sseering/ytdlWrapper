@@ -66,34 +66,38 @@ def printList(list):
 
 if len(sys.argv) > 1:
 	argv1 = sys.argv[1]
+	argvLen = len(sys.argv)
 	if argv1 == '--help' or argv1 == '-h' or argv1 == '-?' or argv1 == '-help':
 		print('env: YTD_KEY [YTD_RATE]')
 		print('--help|-h|-?|-help')
 		print('--print')
 		print('--add URL Comment')
 		print('--del No')
-		print('--skip No')
+		print('--skip No...')
 		print('--readArchive File')
 
 	if argv1 == '--print':
 		printList(list)
 		print('dlArchive:', archiveFile)
 
-	if len(sys.argv) > 3 and argv1 == '--add':
+	if argvLen > 3 and argv1 == '--add':
 		list.append({'url': sys.argv[2], 'comment': sys.argv[3], 'skip': False})
 		writeVideoLists(list, 'added', '--add')
 
-	if len(sys.argv) > 2 and argv1 == '--skip':
-		i = -1
-		try:
-			i = int(sys.argv[2])
-		except:
-			sys.exit(1)
+	if argvLen > 2 and argv1 == '--skip':
+		idx = 2
+		while idx < argvLen:
+			i = -1
+			try:
+				i = int(sys.argv[idx])
+			except:
+				sys.exit(1)
 
-		list[i]['skip'] = not list[i]['skip']
+			list[i]['skip'] = not list[i]['skip']
+			idx += 1
 		writeVideoLists(list, 'skip adjusted', '--skip')
 
-	if len(sys.argv) > 2 and argv1 == '--del':
+	if argvLen > 2 and argv1 == '--del':
 		i = -1
 		try:
 			i = int(sys.argv[2])
@@ -103,7 +107,7 @@ if len(sys.argv) > 1:
 		list.pop(i)
 		writeVideoLists(list, 'deleted', '--del')
 
-	if len(sys.argv) > 2 and argv1 == '--readArchive':
+	if argvLen > 2 and argv1 == '--readArchive':
 		print('using following file as new dlArchive:' , sys.argv[2])
 		encryptArchive(sys.argv[2])
 
