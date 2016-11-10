@@ -113,11 +113,18 @@ if len(sys.argv) > 1:
 
 	sys.exit()
 
+def getDownloadParams(url):
+	result = []
+	if url.startswith('https://www.youtube.com/') or url.startswith('http://www.youtube.com/'):
+		result = ['-f', 'bestvideo+bestaudio']
+	return result
+
 # download newest entries of video lists
 for l in list:
 	if l['skip']:
 		continue
-	youtube-dl @(ratelimit) --add-metadata -f bestvideo+bestaudio --download-archive @(archiveFile) --dateafter 'today-20days' -- @(l['url']) or true @(sys.exit(1))
+	params = getDownloadParams(l['url'])
+	youtube-dl @(ratelimit) --add-metadata @(params) --download-archive @(archiveFile) --dateafter 'today-20days' -- @(l['url']) or true @(sys.exit(1))
 	encryptArchive(archiveFile)
 	git add dlArchive.txt.crypt and git commit -m 'download happend'
 
@@ -129,7 +136,8 @@ for root, dirs, files in os.walk('urls'):
 		print('url-file:', f)
 		for url in urls.splitlines():
 			print('url from file:', url)
-			youtube-dl @(ratelimit) --add-metadata -f bestvideo+bestaudio --download-archive @(archiveFile) -- @(url) or true @(sys.exit(1))
+			params = getDownloadParams(l['url'])
+			youtube-dl @(ratelimit) --add-metadata @(params) --download-archive @(archiveFile) -- @(url) or true @(sys.exit(1))
 			encryptArchive(archiveFile)
 			git add dlArchive.txt.crypt and git commit -m 'download happend'
 		rm -v -- @(f)
