@@ -124,7 +124,7 @@ for l in list:
 	if l['skip']:
 		continue
 	params = getDownloadParams(l['url'])
-	youtube-dl @(ratelimit) @(params) --download-archive @(archiveFile) --dateafter 'today-20days' -- @(l['url']) or true @(sys.exit(1))
+	youtube-dl @(ratelimit) @(params) --download-archive @(archiveFile) -- @(l['url']) or true @(sys.exit(1))
 	encryptArchive(archiveFile)
 	git add dlArchive.txt.crypt and git commit -m 'download happend'
 
