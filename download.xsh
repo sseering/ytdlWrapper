@@ -62,7 +62,7 @@ def writeVideoLists(toWrite, printedMsg, commitMsg):
 
 def printList(list):
 	for i, l in enumerate(list):
-		print(repr(i).rjust(3), l['skip'], l['url'], l['comment'])
+		print(repr(i).rjust(3), str(l['skip']).rjust(5), l['url'], l['comment'])
 
 if len(sys.argv) > 1:
 	argv1 = sys.argv[1]
