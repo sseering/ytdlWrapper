@@ -3,12 +3,16 @@
 import sys
 import json
 import os
+import os.path
 import tempfile
 
 from Crypto.Cipher import AES
 from Crypto.Util import Counter
 from Crypto.Protocol.KDF import PBKDF2
 from Crypto.Hash import SHA256
+
+BITS_PER_BYTE = 8
+AES_HALF_BLOCK_SIZE = AES.block_size // 2
 
 # check if symmetric cipher key is set in env
 if not 'YTD_KEY' in ${...}:
@@ -21,23 +25,32 @@ if 'YTD_RATE' in ${...}:
 	ratelimit = ['-r', $YTD_RATE]
 
 # wrapper around a symmetric cipher
-def getCipher():
-	ctr = Counter.new(128)
+def getCipher(iv):
+	ctr = Counter.new(BITS_PER_BYTE * AES_HALF_BLOCK_SIZE, prefix=iv)
 	key = PBKDF2($YTD_KEY.encode('utf8'), salt=b'15AUt3q2X9CdEPAx', dkLen=32)
 	return AES.new(key, mode=AES.MODE_CTR, counter=ctr)
 
 # decrypt dlArchive file of youtube-dl to temporary file and return its filename
 def decryptArchive():
+	with open('dlArchive.iv.bin', 'rb') as ivFile:
+		iv = ivFile.read()
+
 	with tempfile.NamedTemporaryFile(delete=False) as tmpDlArchive:
 		with open('dlArchive.txt.crypt', 'rb') as dlArchive:
-			tmpDlArchive.write(getCipher().decrypt(dlArchive.read()))
+			tmpDlArchive.write(getCipher(iv).decrypt(dlArchive.read()))
+
 	return tmpDlArchive.name
 
 # encrypt dlArchive file of youtube-dl and overwrite previously existing crypted file, using the given file name as source
 def encryptArchive(srcFileName):
+	iv = os.urandom(AES_HALF_BLOCK_SIZE)
+
+	with open('dlArchive.iv.bin', 'wb') as ivFile:
+		ivFile.write(iv)
+
 	with open(srcFileName, 'r') as srcFile:
 		with open('dlArchive.txt.crypt', 'wb') as dlArchive:
-			dlArchive.write(getCipher().encrypt(srcFile.read()))
+			dlArchive.write(getCipher(iv).encrypt(srcFile.read()))
 
 # update data files
 git pull --no-rebase or true @(sys.exit(1))
@@ -47,17 +60,27 @@ archiveFile = decryptArchive()
 
 # read videolists from encrypted file
 def readVideoLists():
+	with open('listFile.iv.bin', 'rb') as ivFile:
+		iv = ivFile.read()
+
 	with open('listFile.json.crypt', 'rb') as listFileCryted:
-		return json.loads(getCipher().decrypt(listFileCryted.read()).decode('utf8'))
+		return json.loads(getCipher(iv).decrypt(listFileCryted.read()).decode('utf8'))
 
 list = readVideoLists()
 
 # write videolists to encrypted file
 def writeVideoLists(toWrite, printedMsg, commitMsg):
+	iv = os.urandom(AES_HALF_BLOCK_SIZE)
+
+	with open('listFile.iv.bin', 'wb') as ivFile:
+		ivFile.write(iv)
+
 	with open('listFile.json.crypt', 'wb') as f:
-		f.write(getCipher().encrypt(json.dumps(toWrite)))
+		f.write(getCipher(iv).encrypt(json.dumps(toWrite)))
+
 	print(printedMsg)
 	printList(toWrite)
+
 	git add listFile.json.crypt and git commit -m @(commitMsg) and git push
 
 def printList(list):
