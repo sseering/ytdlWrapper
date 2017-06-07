@@ -81,11 +81,13 @@ def writeVideoLists(toWrite, printedMsg, commitMsg):
 	print(printedMsg)
 	printList(toWrite)
 
-	git add listFile.json.crypt and git commit -m @(commitMsg) and git push
+	git add listFile.json.crypt listFile.iv.bin git commit -m @(commitMsg) and git push
 
 def printList(list):
 	for i, l in enumerate(list):
-		print(repr(i).rjust(3), str(l['skip']).rjust(5), l['url'], l['comment'])
+		skip_str = 'skip' if l['skip'] else 'dl'
+		skip_str = skip_str.rjust(5)
+		print(repr(i).rjust(3), skip_str, l['url'], l['comment'])
 
 if len(sys.argv) > 1:
 	argv1 = sys.argv[1]
@@ -149,7 +151,7 @@ for l in list:
 	params = getDownloadParams(l['url'])
 	youtube-dl @(ratelimit) @(params) --download-archive @(archiveFile) -- @(l['url']) or true @(sys.exit(1))
 	encryptArchive(archiveFile)
-	git add dlArchive.txt.crypt and git commit -m 'download happend'
+	git add dlArchive.txt.crypt dlArchive.iv.bin and git commit -m 'download happend'
 
 # download single videos
 for root, dirs, files in os.walk('urls'):
@@ -162,7 +164,7 @@ for root, dirs, files in os.walk('urls'):
 			params = getDownloadParams(url)
 			youtube-dl @(ratelimit) @(params) --download-archive @(archiveFile) -- @(url) or true @(sys.exit(1))
 			encryptArchive(archiveFile)
-			git add dlArchive.txt.crypt and git commit -m 'download happend'
+			git add dlArchive.txt.crypt dlArchive.iv.bin and git commit -m 'download happend'
 		rm -v -- @(f)
 
 # publish data file
