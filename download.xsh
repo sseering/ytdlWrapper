@@ -81,7 +81,7 @@ def writeVideoLists(toWrite, printedMsg, commitMsg):
 	print(printedMsg)
 	printList(toWrite)
 
-	git add listFile.json.crypt listFile.iv.bin git commit -m @(commitMsg) and git push
+	git add listFile.json.crypt listFile.iv.bin and git commit -m @(commitMsg) and git push
 
 def printList(list):
 	for i, l in enumerate(list):
