@@ -56,7 +56,7 @@ def readPlaylistList():
 
 	with open('listFile.json.crypt', 'rb') as listFileCryted:
 		urlsAndComments = json.loads(getCipher(iv).decrypt(listFileCryted.read()).decode('utf8'))
-	
+
 	return [Playlist(url=uc['url'], comment=uc['comment'], skip=(idx in skipList)) for (idx, uc) in enumerate(urlsAndComments)]
 
 # write list of Playlists to encrypted file
@@ -84,7 +84,7 @@ def printList(list):
 	for i, l in enumerate(list):
 		skip_str = 'skip' if l.skip else 'dl'
 		skip_str = skip_str.rjust(5)
-		print(repr(i).rjust(3), skip_str, l.url, l.comment)
+		print(repr(i).rjust(3), skip_str, l.url, repr(i).rjust(3), skip_str, l.comment)
 
 def handleSkipToggle(indexList, videoList):
 	for i in indexList:
