@@ -7,6 +7,7 @@ import os.path
 import tempfile
 import argparse
 import collections
+import filecmp
 
 from Crypto.Cipher import AES
 from Crypto.Util import Counter
@@ -16,7 +17,14 @@ from Crypto.Hash import SHA256
 BITS_PER_BYTE = 8
 AES_HALF_BLOCK_SIZE = AES.block_size // 2
 
-Playlist = collections.namedtuple('Playlist', ['skip', 'url', 'comment'])
+
+def create_and_save_iv(file_name):
+    iv = os.urandom(AES_HALF_BLOCK_SIZE)
+
+    with open(file_name, 'wb') as iv_file:
+        iv_file.write(iv)
+
+    return iv
 
 
 def get_cipher(iv):
@@ -43,65 +51,110 @@ def decrypt_archive():
 def encrypt_archive(src_file_name):
     """Encrypt dlArchive file of youtube-dl and overwrite previously existing crypted file, using the given file name as source."""
 
-    iv = os.urandom(AES_HALF_BLOCK_SIZE)
+    cmp_file_name = decrypt_archive()
+    if filecmp.cmp(src_file_name, cmp_file_name):
+        print('Not overwriting dlArchive with same content')
+        return
 
-    with open('dlArchive.iv.bin', 'wb') as iv_file:
-        iv_file.write(iv)
+    iv = create_and_save_iv('dlArchive.iv.bin')
 
     with open(src_file_name, 'r') as src_file:
         with open('dlArchive.txt.crypt', 'wb') as dl_archive:
             dl_archive.write(get_cipher(iv).encrypt(src_file.read()))
 
 
-def read_playlist_list():
-    """Read list of Playlists from encrypted file."""
-
-    with open('listFile.iv.bin', 'rb') as iv_file:
-        iv = iv_file.read()
-
-    with open('skip.json', 'rt') as skip_file:
-        skip_list = json.load(skip_file)
-
-    with open('listFile.json.crypt', 'rb') as list_file_cryted:
-        urls_and_comments = json.loads(get_cipher(iv).decrypt(list_file_cryted.read()).decode('utf8'))
-
-    return [Playlist(url=uc['url'], comment=uc['comment'], skip=(idx in skip_list)) for (idx, uc) in enumerate(urls_and_comments)]
+Playlist = collections.namedtuple('Playlist', ['skip', 'url', 'comment'])
 
 
-def write_playlist_list(to_write, printed_msg, commit_msg, only_write_skip_list):
-    """Write list of Playlists to encrypted file."""
+class PlaylistList:
+    def __init__(self):
+        self._list = []
+        self._read_from_files()
 
-    if not only_write_skip_list:
-        iv = os.urandom(AES_HALF_BLOCK_SIZE)
+    def _read_from_files(self):
+        with open('listFile.iv.bin', 'rb') as iv_file:
+            iv = iv_file.read()
 
-        with open('listFile.iv.bin', 'wb') as iv_file:
-            iv_file.write(iv)
+        with open('skip.json', 'rt') as skip_file:
+            skip_list = json.load(skip_file)
 
-        with open('listFile.json.crypt', 'wb') as f:
-            urls_and_comments = [{'url': pl.url, 'comment': pl.comment} for pl in to_write]
-            f.write(get_cipher(iv).encrypt(json.dumps(urls_and_comments)))
+        with open('listFile.json.crypt', 'rb') as list_file_crypted:
+            urls_and_comments = json.loads(get_cipher(iv).decrypt(list_file_crypted.read()).decode('utf8'))
 
-    with open('skip.json', 'wt') as skip_file:
-        skip_list = [idx for (idx, pl) in enumerate(to_write) if pl.skip]
-        skip_file.write(json.dumps(skip_list))
+        for (idx, uc) in enumerate(urls_and_comments):
+            self._list.append(Playlist(url=uc['url'], comment=uc['comment'], skip=(idx in skip_list)))
 
-    print(printed_msg)
-    print_list(to_write)
+    def _detailed_cmp(self, other):
+        if len(self._list) != len(other._list):
+            return (True, True)
 
-    git add listFile.json.crypt listFile.iv.bin skip.json and git commit -m @(commit_msg) and git push
+        skip_data_different = False
+        url_or_comment_data_different = False
+
+        for (a, b) in zip(self._list, other._list):
+            if a.skip != b.skip:
+                skip_data_different = True
+            if a.url != b.url or a.comment != b.comment:
+                url_or_comment_data_different = True
+
+        return (skip_data_different, url_or_comment_data_different)
+
+    def _write_to_files(self, commit_msg):
+        cmp_data = PlaylistList()
+        (skip_data_different, url_or_comment_data_different) = self._detailed_cmp(cmp_data)
+
+        if url_or_comment_data_different:
+            iv = create_and_save_iv('listFile.iv.bin')
+
+            with open('listFile.json.crypt', 'wb') as f:
+                urls_and_comments = [{'url': pl.url, 'comment': pl.comment} for pl in self._list]
+                f.write(get_cipher(iv).encrypt(json.dumps(urls_and_comments)))
+
+        if skip_data_different:
+            with open('skip.json', 'wt') as skip_file:
+                skip_list = [idx for (idx, pl) in enumerate(self._list) if pl.skip]
+                skip_file.write(json.dumps(skip_list))
+
+        git add listFile.json.crypt listFile.iv.bin skip.json and git commit -m @(commit_msg) and git push
+
+    def print(self):
+        for i, l in enumerate(self._list):
+            skip_str = 'skip' if l.skip else 'dl'
+            skip_str = skip_str.rjust(5)
+            print(repr(i).rjust(3), skip_str, l.url, repr(i).rjust(3), skip_str, l.comment)
+
+    def toggle_skip(self, indices_to_toggle):
+        for i in indices_to_toggle:
+            toggle_this = self._list[i]
+            self._list[i] = Playlist(url=toggle_this.url, comment=toggle_this.comment, skip=not toggle_this.skip)
+
+        print('skip adjusted')
+        self.print()
+        self._write_to_files('--skip')
+
+    def del_playlist(self, idx):
+        self._list.pop(idx)
+
+        print('deleted')
+        self.print()
+        self._write_to_files('--del')
+
+    def add_playlist(self, url, comment):
+        self._list.append(Playlist(url=url, comment=comment, skip=False))
+
+        print('added')
+        self.print()
+        self._write_to_files('--add')
+
+    def enumerate_to_download(self):
+        for pl in self._list:
+            if not pl.skip:
+                yield pl
 
 
-def print_list(list):
-    for i, l in enumerate(list):
-        skip_str = 'skip' if l.skip else 'dl'
-        skip_str = skip_str.rjust(5)
-        print(repr(i).rjust(3), skip_str, l.url, repr(i).rjust(3), skip_str, l.comment)
 
 
-def handle_skip_toggle(indices_to_toggle, video_list):
-    for i in indices_to_toggle:
-        video_list[i] = Playlist(url=video_list[i].url, comment=video_list[i].comment, skip=not video_list[i].skip)
-    write_playlist_list(video_list, 'skip adjusted', '--skip', only_write_skip_list=True)
+
 
 
 def get_download_params(url):
@@ -127,7 +180,7 @@ def main():
     # dlArchive file of youtube-dl
     archive_file_name = decrypt_archive()
 
-    list = read_playlist_list()
+    list = PlaylistList()
 
     parser = argparse.ArgumentParser()
     parser.add_argument('-?', action='help')
@@ -141,23 +194,21 @@ def main():
     args = parser.parse_args()
 
     if args.print:
-        print_list(list)
+        list.print()
         print('dlArchive:', archive_file_name)
         print('Switch skips with --skip No...')
         return
 
     if args.skip:
-        handle_skip_toggle(args.skip, list)
+        list.toggle_skip(args.skip)
         return
 
     if args.del_arg:
-        list.pop(args.del_arg)
-        write_playlist_list(list, 'deleted', '--del', only_write_skip_list=False)
+        list.del_playlist(args.del_arg)
         return
 
     if args.add:
-        list.append(Playlist(url=args.add[0], comment=args.add[1], skip=False))
-        write_playlist_list(list, 'added', '--add', only_write_skip_list=False)
+        list.add_playlist(args.add[0], args.add[1])
         return
 
     if args.readArchive:
@@ -167,9 +218,7 @@ def main():
         return
 
     # download newest entries of video lists
-    for l in list:
-        if l.skip:
-            continue
+    for l in list.enumerate_to_download():
         params = get_download_params(l.url)
         youtube-dl @(ratelimit) @(params) --download-archive @(archive_file_name) -- @(l.url) or true @(sys.exit(1))
         encrypt_archive(archive_file_name)
