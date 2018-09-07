@@ -58,7 +58,7 @@ def encrypt_archive(src_file_name):
 
     iv = create_and_save_iv('dlArchive.iv.bin')
 
-    with open(src_file_name, 'r') as src_file:
+    with open(src_file_name, 'rb') as src_file:
         with open('dlArchive.txt.crypt', 'wb') as dl_archive:
             dl_archive.write(get_cipher(iv).encrypt(src_file.read()))
 
