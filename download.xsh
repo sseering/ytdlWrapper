@@ -108,7 +108,7 @@ class PlaylistList:
 
             with open('listFile.json.crypt', 'wb') as f:
                 urls_and_comments = [{'url': pl.url, 'comment': pl.comment} for pl in self._list]
-                f.write(get_cipher(iv).encrypt(json.dumps(urls_and_comments)))
+                f.write(get_cipher(iv).encrypt(json.dumps(urls_and_comments).encode('utf8')))
 
         if skip_data_different:
             with open('skip.json', 'wt') as skip_file:
