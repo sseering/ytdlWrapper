@@ -121,7 +121,7 @@ class PlaylistList:
         for i, l in enumerate(self._list):
             skip_str = 'skip' if l.skip else 'dl'
             skip_str = skip_str.rjust(5)
-            print(repr(i).rjust(3), skip_str, l.url, repr(i).rjust(3), skip_str, l.comment)
+            print(repr(i).rjust(3), skip_str, l.url.ljust(72), repr(i).rjust(3), skip_str, l.comment)
 
     def toggle_skip(self, indices_to_toggle):
         for i in indices_to_toggle:
