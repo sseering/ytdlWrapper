@@ -188,7 +188,7 @@ def main():
     group.add_argument('--print', action='store_true')
     group.add_argument('--list', action='store_true', dest='print')
     group.add_argument('--skip', type=int, nargs='+')
-    group.add_argument('--del', type=int, dest='del_arg')
+    group.add_argument('--del', type=int, dest='del_arg', metavar='0_based_list_idx')
     group.add_argument('--add', type=str, nargs=2, metavar=('URL', 'Label'))
     group.add_argument('--readArchive', type=str)
     args = parser.parse_args()
