@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import re
+import os
 import os.path
 import sys
 
@@ -19,6 +20,8 @@ def main():
     else:
         raise Exception()
 
+    os.makedirs('./urls', exist_ok=True)
+
     num_found = 0
     filename_ctr = 0
     for match in url_matcher.finditer(whole_input):
@@ -33,6 +36,9 @@ def main():
             except OSError:
                 pass
             filename_ctr += 1
+        if filename_ctr >= 31337:
+            print("Error: hit infinite loop while attempting to create files. Exiting.", file=sys.stderr)
+            sys.exit(1)
 
     num_backup_candidates = 0
     whole_len = len(whole_input)
