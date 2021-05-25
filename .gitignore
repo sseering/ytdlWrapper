@@ -1,6 +1,8 @@
 *.webm
 *.mkv
+*.mp3
 *.mp4
 *.part
 *.ytdl
 urls
+localSkipCriteria.json

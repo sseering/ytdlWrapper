@@ -69,17 +69,22 @@ Playlist = collections.namedtuple('Playlist', ['skip', 'url', 'comment'])
 class PlaylistList:
     def __init__(self):
         self._list = []
+        self._local_skip_criteria = []
         self._read_from_files()
 
     def _read_from_files(self):
         with open('listFile.iv.bin', 'rb') as iv_file:
             iv = iv_file.read()
 
-        with open('skip.json', 'rt') as skip_file:
+        with open('skip.json', mode='rt', encoding="utf8") as skip_file:
             skip_list = json.load(skip_file)
 
-        with open('listFile.json.crypt', 'rb') as list_file_crypted:
+        with open('listFile.json.crypt', mode='rb') as list_file_crypted:
             urls_and_comments = json.loads(get_cipher(iv).decrypt(list_file_crypted.read()).decode('utf8'))
+
+        if os.path.isfile('localSkipCriteria.json'):
+            with open('localSkipCriteria.json', mode='rt', encoding="utf8") as in_f:
+                self._local_skip_criteria = [_.lower() for _ in json.load(in_f)]
 
         for (idx, uc) in enumerate(urls_and_comments):
             self._list.append(Playlist(url=uc['url'], comment=uc['comment'], skip=(idx in skip_list)))
@@ -111,7 +116,7 @@ class PlaylistList:
                 f.write(get_cipher(iv).encrypt(json.dumps(urls_and_comments).encode('utf8')))
 
         if skip_data_different:
-            with open('skip.json', 'wt') as skip_file:
+            with open('skip.json', mode='wt', encoding="utf8") as skip_file:
                 skip_list = [idx for (idx, pl) in enumerate(self._list) if pl.skip]
                 skip_file.write(json.dumps(skip_list))
 
@@ -148,8 +153,12 @@ class PlaylistList:
 
     def enumerate_to_download(self):
         for pl in self._list:
-            if not pl.skip:
-                yield pl
+            if pl.skip:
+                continue
+            comment_lo = pl.comment.lower()
+            if any((_ in comment_lo) for _ in self._local_skip_criteria):
+                continue
+            yield pl
 
 
 
