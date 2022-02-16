@@ -8,7 +8,7 @@ import sys
 
 def main():
     already_found = []
-    url_matcher = re.compile(r'(https?://(www.)?)?(youtu.be|youtube.(com|de|ch|at))/watch\?v=[-_0-9A-Za-z]{11}')
+    url_matcher = re.compile(r'(https?://(www.)?)?((youtu.be|youtube.(com|de|ch|at))/watch\?v=[-_0-9A-Za-z]{11}|youtu.be/[-_0-9A-Za-z]{11})')
     backup_matcher = re.compile(r'youtu')
 
     argc = len(sys.argv)
